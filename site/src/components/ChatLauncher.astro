@@ -62,7 +62,7 @@ const shown = anyLive ? channels.filter((c) => c.href) : channels;
         </p>
         {!anyLive && <p class="wa__note">{t(locale, 'chat.unconfigured')}</p>}
       </div>
-      <button class="wa__fab" type="button" data-wa-open aria-expanded="false" aria-controls="wa-panel">
+      <button class="wa__fab" type="button" data-wa-open aria-expanded="false" aria-controls="wa-panel" aria-label={t(locale, 'chat.open')}>
         <Icon name="chat" size={22} />
         <span class="wa__label">{t(locale, 'chat.open')}</span>
       </button>

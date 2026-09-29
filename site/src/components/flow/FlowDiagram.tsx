@@ -116,10 +116,10 @@ function StepCard({
       onFocus={onHold ? () => onHold(index) : undefined}
       onBlur={onHold ? () => onHold(null) : undefined}
     >
-      <h4 className="pf-card__head" id={titleId}>
+      <h3 className="pf-card__head" id={titleId}>
         <span className="pf-card__dot" aria-hidden="true" />
         <span className="pf-card__title">{step.title[locale]}</span>
-      </h4>
+      </h3>
       <div className="pf-card__body">
         <p className="pf-card__desc">
           <Desc text={step.desc[locale]} split={split} />

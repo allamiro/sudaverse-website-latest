@@ -1,7 +1,7 @@
 ---
 import Icon from '@/components/Icon.astro';
 import ProductCard from '@/components/products/ProductCard.astro';
-import { categoryBlurb, categoryOrder, productsByCategory, products, type CategoryId } from '@/data/products';
+import { categoryBlurb, categoryHue as hue, categoryOrder, productsByCategory, products, type CategoryId } from '@/data/products';
 import { localePath, t } from '@/i18n/utils';
 import { pick, type Locale } from '@/i18n/config';
 
@@ -41,12 +41,6 @@ const famLabel: Record<CategoryId, { wide: Pt; tall: Pt }> = {
   'data-intelligence': { wide: [95, 530], tall: [20, 215] },
   'secure-ai': { wide: [470, 275], tall: [150, 150] },
   'language-research': { wide: [690, 40], tall: [20, 405] },
-};
-const hue: Record<CategoryId, string> = {
-  'ai-products': 'var(--brand-blue)',
-  'data-intelligence': 'var(--brand-green)',
-  'secure-ai': 'var(--copper-300)',
-  'language-research': 'var(--viz-gold)',
 };
 const W = { wide: [1000, 560], tall: [400, 600] } as const;
 
@@ -225,10 +219,16 @@ const pct = (v: number, of: number) => `${Math.round((v / of) * 10000) / 100}%`;
     stage.hidden = false;
     list.hidden = true;
 
+    // One tab stop for the whole sky (roving tabindex): Tab enters at the selected star, arrows move inside.
     const select = (slug: string) => {
-      for (const s of stars) s.setAttribute('aria-pressed', String(s.dataset.star === slug));
+      for (const s of stars) {
+        const on = s.dataset.star === slug;
+        s.setAttribute('aria-pressed', String(on));
+        s.tabIndex = on ? 0 : -1;
+      }
       for (const c of cards) c.hidden = c.dataset.card !== slug;
     };
+    select(stars.find((s) => s.getAttribute('aria-pressed') === 'true')?.dataset.star ?? stars[0].dataset.star!);
     stars.forEach((star, i) => {
       star.addEventListener('click', () => select(star.dataset.star!));
       // Arrow keys walk the sky family by family; Home and End jump to the ends.

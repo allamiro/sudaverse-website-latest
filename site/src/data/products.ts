@@ -30,6 +30,14 @@ export type CategoryId = 'ai-products' | 'data-intelligence' | 'secure-ai' | 'la
 
 export const categoryOrder: CategoryId[] = ['ai-products', 'data-intelligence', 'secure-ai', 'language-research'];
 
+/** A graphic hue per family (dots, constellation lines), from the logo and warm accents. Never used for text. */
+export const categoryHue: Record<CategoryId, string> = {
+  'ai-products': 'var(--brand-blue)',
+  'data-intelligence': 'var(--brand-green)',
+  'secure-ai': 'var(--copper-300)',
+  'language-research': 'var(--viz-gold)',
+};
+
 /** One line per project family, shown on the Projects index and the home page. */
 export const categoryBlurb: Record<CategoryId, Localized> = {
   'ai-products': {

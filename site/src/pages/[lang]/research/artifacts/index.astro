@@ -19,6 +19,7 @@ const copy = {
     h1: 'Artifacts',
     lead: 'Long technical write-ups from the team, with the data, diagrams and code behind them. Every number in a chart comes from a cited source.',
     all: 'All directions',
+    listLabel: 'All artifacts',
     min: (n: number) => `${n} min read`,
     inLang: { en: 'In English', ar: 'بالعربية' },
     empty: 'No artifacts in this direction yet.',
@@ -30,6 +31,7 @@ const copy = {
     h1: 'مقالات تقنية',
     lead: 'كتابات تقنية مطوّلة من الفريق، مع البيانات والمخططات والشيفرة التي تقف خلفها. كل رقم في مخطط مأخوذ من مصدر مذكور.',
     all: 'كل الاتجاهات',
+    listLabel: 'كل المقالات',
     min: (n: number) => `${n} دقيقة قراءة`,
     inLang: { en: 'In English', ar: 'بالعربية' },
     empty: 'لا توجد مقالات في هذا الاتجاه بعد.',
@@ -64,7 +66,7 @@ const jsonLd = [
     </div>
   </section>
 
-  <section class="section section--tight list" aria-labelledby="art-h">
+  <section class="section section--tight list" aria-label={copy.listLabel}>
     <div class="container">
       {
         used.length > 1 && (

@@ -6,10 +6,11 @@ import TraceArt from '@/components/TraceArt.astro';
 import teamIllustration from '@/assets/photos/company-team.jpg';
 import valuesGraphic from '@/assets/topics/values.jpg';
 import TeamMember from '@/components/team/TeamMember.astro';
+import FamilyStrip from '@/components/products/FamilyStrip.astro';
 import { founders, teamMembers } from '@/data/team';
 import { site } from '@/config/site';
 import { localePath, localeStaticPaths, t } from '@/i18n/utils';
-import { pick, type Locale } from '@/i18n/config';
+import type { Locale } from '@/i18n/config';
 
 export function getStaticPaths() {
   return localeStaticPaths();
@@ -37,6 +38,7 @@ const copy = {
         'We are engineers, researchers and advisors who build production-oriented AI products and digital infrastructure. The team spans machine learning, software engineering, cybersecurity, applied research, consulting and business development.',
         'Our work is one body of work, from language technology to secure systems, not a set of unrelated business units.',
       ],
+      strip: 'Our projects by family',
     },
     vm: {
       h2: 'Vision and mission',
@@ -148,6 +150,7 @@ const copy = {
         'نحن مهندسون وباحثون ومستشارون نبني منتجات ذكاء اصطناعي وبنية رقمية موجّهة للتشغيل. يمتد الفريق عبر التعلّم الآلي وهندسة البرمجيات والأمن السيبراني والبحث التطبيقي والاستشارات وتطوير الأعمال.',
         'عملنا منظومة واحدة، من تقنيات اللغة إلى الأنظمة الآمنة، وليس مجموعة وحدات أعمال لا صلة بينها.',
       ],
+      strip: 'مشاريعنا حسب المجال',
     },
     vm: {
       h2: 'الرؤية والمهمة',
@@ -289,6 +292,9 @@ const contactHref = localePath(locale, 'contact');
         <p class="t-lead who__lead">{copy.who.p[0]}</p>
         <p>{copy.who.p[1]}</p>
       </div>
+    </div>
+    <div class="container who__strip" data-reveal>
+      <FamilyStrip locale={locale} label={copy.who.strip} />
     </div>
   </section>
 
@@ -495,6 +501,9 @@ const contactHref = localePath(locale, 'contact');
     display: flex;
     flex-wrap: wrap;
     gap: 0 var(--s-6);
+  }
+  .who__strip {
+    margin-block-start: var(--s-8);
   }
   .who__lead {
     color: var(--color-text);

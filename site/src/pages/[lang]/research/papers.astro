@@ -302,6 +302,12 @@ const years = [...new Set(sorted.map((p) => p.year))];
     min-inline-size: 0;
     opacity: 0.9;
   }
+  /* On phones the art only delays the papers: a short band, not a second screen. */
+  @media (max-width: 47.99rem) {
+    .head__art {
+      aspect-ratio: 5 / 1;
+    }
+  }
   @media (min-width: 64rem) {
     .head__grid {
       grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);

@@ -5,7 +5,7 @@ import Button from './Button.astro';
 import Logo from './Logo.astro';
 import LangSwitch from './LangSwitch.astro';
 import StageBadge from './StageBadge.astro';
-import { categoryOrder, productsByCategory, type Stage } from '@/data/products';
+import { categoryHue, categoryOrder, productsByCategory, type Stage } from '@/data/products';
 import { site } from '@/config/site';
 import type { NavKey } from '@/config/nav';
 import { localePath, t } from '@/i18n/utils';
@@ -26,6 +26,8 @@ interface MenuItem {
   /** Brand names stay Latin and are shielded from translation. */
   brand?: boolean;
   stage?: Stage;
+  /** Family hue (projects only), so the menu matches the family colours used across the site. */
+  hue?: string;
 }
 interface MenuGroup {
   label: string;
@@ -51,8 +53,8 @@ const productIcon: Record<string, IconName> = {
   sudaflood: 'waves',
   llmcorpuskit: 'code',
   urri: 'chat',
-  sudanizer: 'code',
-  sudata: 'book',
+  sudanizer: 'layers',
+  sudata: 'database',
 };
 
 const projectGroups: MenuGroup[] = categoryOrder.map((id) => ({
@@ -64,6 +66,7 @@ const projectGroups: MenuGroup[] = categoryOrder.map((id) => ({
     desc: pick(p.tagline, locale) ?? '',
     brand: true,
     stage: p.stage,
+    hue: categoryHue[id],
   })),
 }));
 
@@ -161,7 +164,7 @@ const menus: Menu[] = [
                                 {g.items.map((it) => (
                                   <li>
                                     <a class="mi" href={it.href}>
-                                      <span class="mi__icon" data-tone={(ci * 2 + gi) % 3}>
+                                      <span class="mi__icon" data-tone={(ci * 2 + gi) % 3} style={it.hue ? `--hue:${it.hue}` : undefined}>
                                         <Icon name={it.icon} size={20} />
                                       </span>
                                       <span class="mi__text">
@@ -518,11 +521,15 @@ const menus: Menu[] = [
     background: color-mix(in srgb, var(--brand-blue) 16%, var(--white));
     color: var(--brand-blue-700);
   }
-  .mi__icon[data-tone='1'] {
+  .mi__icon[style*='--hue'] {
+    background: color-mix(in srgb, var(--hue) 20%, var(--white));
+    color: color-mix(in srgb, var(--hue) 55%, var(--ink));
+  }
+  .mi__icon[data-tone='1']:not([style*='--hue']) {
     background: color-mix(in srgb, var(--brand-green) 18%, var(--white));
     color: var(--brand-green-700);
   }
-  .mi__icon[data-tone='2'] {
+  .mi__icon[data-tone='2']:not([style*='--hue']) {
     background: var(--nile-100);
     color: var(--nile-800);
   }

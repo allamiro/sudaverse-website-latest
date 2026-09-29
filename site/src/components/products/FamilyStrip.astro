@@ -1,0 +1,96 @@
+---
+import { categoryHue, categoryOrder, productsByCategory } from '@/data/products';
+import { localePath, t } from '@/i18n/utils';
+import type { Locale } from '@/i18n/config';
+
+/** The four project families side by side, each with links to its projects: the "one body of work" at a glance. */
+interface Props {
+  locale: Locale;
+  label: string;
+}
+const { locale, label } = Astro.props;
+const groups = categoryOrder.map((id) => ({ id, items: productsByCategory(id) })).filter((g) => g.items.length > 0);
+---
+
+<nav class="fstrip" aria-label={label}>
+  <ul role="list" class="fstrip__list">
+    {
+      groups.map((g) => (
+        <li class="fstrip__fam" style={`--hue:${categoryHue[g.id]}`}>
+          <p class="fstrip__name">
+            <span class="fstrip__dot" aria-hidden="true" />
+            {t(locale, `category.${g.id}` as const)}
+          </p>
+          <ul role="list" class="fstrip__items">
+            {g.items.map((p) => (
+              <li>
+                <a href={localePath(locale, `projects/${p.slug}`)} translate="no">
+                  {p.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  .fstrip__list {
+    display: grid;
+    gap: var(--s-5);
+    margin: 0;
+    padding: 0;
+  }
+  .fstrip__fam {
+    display: grid;
+    align-content: start;
+    gap: var(--s-2);
+    padding-block-start: var(--s-3);
+    border-block-start: 2px solid var(--hue);
+  }
+  .fstrip__name {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-size: var(--fs-100);
+    font-weight: 650;
+    letter-spacing: var(--tracking-meta);
+    color: var(--color-text-meta);
+  }
+  .fstrip__dot {
+    inline-size: 0.55rem;
+    block-size: 0.55rem;
+    border-radius: 50%;
+    background: var(--hue);
+  }
+  .fstrip__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--s-4);
+    margin: 0;
+    padding: 0;
+  }
+  .fstrip__items a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+    font-weight: 620;
+    text-decoration: none;
+  }
+  .fstrip__items a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+  @media (min-width: 40rem) {
+    .fstrip__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 64rem) {
+    .fstrip__list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+</style>
