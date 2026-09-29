@@ -8,6 +8,8 @@ import urriLogo from '@/assets/products/urri-logo.png';
 import sudataLogo from '@/assets/products/sudata-logo.png';
 import sudanMonitorLogo from '@/assets/products/sudan-monitor-logo.png';
 import sudanizerLogo from '@/assets/products/sudanizer-logo.png';
+import sudatutorScreen from '@/assets/products/screens/sudatutor.png';
+import terabScreen from '@/assets/products/screens/terab.png';
 
 /**
  * Product registry: the single source of truth for menus, product pages, the ecosystem
@@ -56,6 +58,11 @@ export interface Product {
   approach?: Localized;
   /** The user flow shown as an animated diagram on the project page (4 to 6 steps). */
   flow?: FlowStep[];
+  /**
+   * A real capture of the product's own public page (the address in `url`), shown in the project hero.
+   * Never a mock-up. Products without one show their logo over the brand's circuit art instead.
+   */
+  screen?: { image: ImageMetadata; alt: Localized };
 }
 
 export interface FlowStep {
@@ -126,6 +133,13 @@ export const products: Product[] = [
     ],
     languages: ['ar'],
     url: 'https://sudatutor.sudaverse.com/',
+    screen: {
+      image: sudatutorScreen,
+      alt: {
+        en: 'The SudaTutor home page in Arabic: “Learn the Sudanese curriculum with AI assistance”, with buttons to create a free account or try as a guest, and the counts 12 grade levels and 117 books.',
+        ar: 'الصفحة الرئيسية لسودا تيوتر: «تعلّم المنهج السوداني بمساعدة الذكاء الاصطناعي»، مع زرّي إنشاء حساب مجاني والتجربة كضيف، وعددي 12 صفًّا دراسيًا و117 كتابًا.',
+      },
+    },
   },
   {
     slug: 'terab',
@@ -136,6 +150,13 @@ export const products: Product[] = [
     logo: terabLogo,
     // Public app, confirmed reachable; source: the owner's presentation.
     url: 'https://terab.sudaverse.com/farmer',
+    screen: {
+      image: terabScreen,
+      alt: {
+        en: 'The Terab farmer page in Arabic: “A smart agricultural platform for Sudanese farmers”, with sign-up buttons and service tiles for farm memory, weather and recommendations, and disease diagnosis.',
+        ar: 'صفحة المزارع في تيراب: «منصة زراعية ذكية للمزارعين السودانيين»، مع أزرار التسجيل وبطاقات خدمات ذاكرة المزرعة والطقس والتوصيات وتشخيص الأمراض.',
+      },
+    },
     tagline: { en: 'Arabic-first agriculture platform.', ar: 'منصة زراعية عربية أولاً.' },
     summary: {
       en: 'An integrated agriculture platform powered by AI that gives Sudanese farmers access to specialized agricultural advice and helps them monitor pests, rainfall and irrigation, to raise productivity and reduce risk.',

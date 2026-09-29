@@ -1,0 +1,175 @@
+---
+import { Picture } from 'astro:assets';
+import TraceArt from '@/components/TraceArt.astro';
+import ProductLogo from './ProductLogo.astro';
+import { artFor } from './art';
+import type { Product } from '@/data/products';
+import { pick, type Locale } from '@/i18n/config';
+
+/**
+ * The project hero's visual. A product with a real capture of its public page shows it in a browser frame whose
+ * address bar carries the real host, with the product's logo plate pinned to the corner. A product without one
+ * shows its logo over the brand's circuit art in the product's own tone. Nothing here is a mock-up.
+ */
+interface Props {
+  product: Product;
+  locale: Locale;
+}
+const { product, locale } = Astro.props;
+const screen = product.screen;
+const host = product.url ? new URL(product.url).host : '';
+const art = artFor(product.slug);
+const caption = { en: 'The live product page', ar: 'صفحة المنتج الحيّة' }[locale];
+---
+
+{
+  screen ? (
+    <figure class="pv pv--screen">
+      <div class="browser">
+        <div class="browser__bar" aria-hidden="true">
+          <span class="browser__dots">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span class="browser__url" dir="ltr" translate="no">
+            {host}
+          </span>
+        </div>
+        <Picture
+          src={screen.image}
+          formats={['avif', 'webp']}
+          widths={[640, 960, 1280, 1600]}
+          sizes="(min-width: 64rem) 44vw, 92vw"
+          alt={pick(screen.alt, locale) ?? ''}
+          loading="eager"
+          fetchpriority="high"
+          class="browser__img"
+        />
+      </div>
+      <div class="pv__mark">
+        <ProductLogo slug={product.slug} size="strip" eager />
+      </div>
+      <figcaption class="t-meta pv__cap">
+        {caption}, <span dir="ltr" translate="no">{host}</span>
+      </figcaption>
+    </figure>
+  ) : (
+    <div class:list={['pv', 'pv--art', { 'pv--deep': art.plate === 'deep' }]}>
+      <div class="pv__art" aria-hidden="true">
+        <TraceArt seed={art.seed} tone={art.tone} traces={art.traces + 3} leaves={art.leaves} graticule={art.graticule} thread={product.stage === 'live'} />
+      </div>
+      <div class="pv__logo">
+        <ProductLogo slug={product.slug} size="hero" eager />
+      </div>
+    </div>
+  )
+}
+
+<style>
+  .pv {
+    position: relative;
+    margin: 0;
+    min-inline-size: 0;
+  }
+
+  /* ---- Real capture in a browser frame ---- */
+  .browser {
+    overflow: hidden;
+    background: var(--white);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-media);
+    box-shadow: var(--shadow-media);
+  }
+  .browser__bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-3);
+    padding: 0.55rem 0.75rem;
+    background: var(--paper-2);
+    border-block-end: 1px solid var(--color-border);
+    /* The bar depicts a real browser window, whose controls and address read left to right in both languages. */
+    direction: ltr;
+  }
+  .browser__dots {
+    display: flex;
+    gap: 0.35rem;
+  }
+  .browser__dots i {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    border-radius: 50%;
+    background: var(--line-strong);
+  }
+  .browser__url {
+    justify-self: center;
+    inline-size: min(100%, 22rem);
+    padding: 0.2rem 0.75rem;
+    border-radius: var(--radius-pill);
+    background: var(--white);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-meta);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .browser :global(.browser__img) {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: top;
+  }
+  .pv__mark {
+    position: absolute;
+    inset-block-end: 2.25rem;
+    inset-inline-start: calc(-1 * var(--s-4));
+    inline-size: clamp(7.5rem, 22%, 10rem);
+    box-shadow: var(--shadow-card-hover);
+    border-radius: var(--radius-card);
+  }
+  .pv__cap {
+    margin-block-start: var(--s-3);
+    text-align: end;
+    letter-spacing: 0;
+  }
+  @media (max-width: 47.99rem) {
+    .pv__mark {
+      inset-inline-start: var(--s-3);
+    }
+  }
+
+  /* ---- Logo over brand art ---- */
+  .pv--art {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-3);
+    background: var(--paper);
+  }
+  .pv--deep {
+    background: var(--nile-950);
+    border-color: var(--nile-800);
+  }
+  .pv__art {
+    position: absolute;
+    inset: 0;
+    opacity: 0.55;
+  }
+  .pv--deep .pv__art {
+    opacity: 0.8;
+  }
+  .pv__logo {
+    position: relative;
+    inline-size: min(68%, 24rem);
+    box-shadow: var(--shadow-media);
+    border-radius: var(--radius-3);
+  }
+</style>
