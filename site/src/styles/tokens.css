@@ -104,6 +104,18 @@
     --color-accent-thread: var(--copper-600); /* the single "live thread" in weave art */
     --color-accent-thread-on-deep: var(--copper-300);
 
+    /* Role map (2026-09 design-system pass). Names for the roles components ask for, pointing at the
+       palette above: no new hue is introduced here. */
+    --color-brand-primary: var(--nile-800);
+    --color-brand-secondary: var(--brand-blue-600);
+    --color-accent: var(--brand-green-700);
+    --color-bg-subtle: var(--paper-2);
+    --color-surface: var(--white); /* logo plates, cards, form fields */
+    --color-surface-raised: var(--white);
+    --color-success: var(--sage-700);
+    --color-warning: var(--copper-700);
+    --color-danger: var(--red-700);
+
     /* ---- Typography ---- */
     --font-sans: 'Schibsted Grotesk Variable', 'IBM Plex Sans Arabic', ui-sans-serif, system-ui, -apple-system,
       'Segoe UI', Roboto, sans-serif;
@@ -157,9 +169,14 @@
     --radius-2: 6px; /* buttons, inputs */
     --radius-3: 12px; /* popovers, dialog */
     --radius-pill: 999px; /* small status chips only */
+    --radius-card: var(--radius-2); /* product cards and logo frames */
+    --radius-media: 10px; /* screenshots in a browser frame */
 
     /* ---- Elevation: popovers and glass only ---- */
     --shadow-pop: 0 18px 40px -16px rgb(6 26 44 / 0.4), 0 3px 8px -2px rgb(6 26 44 / 0.14);
+    /* Hover lift on a link card, and the resting shadow of a product screenshot. */
+    --shadow-card-hover: 0 14px 30px -18px rgb(6 26 44 / 0.34), 0 2px 6px -3px rgb(6 26 44 / 0.12);
+    --shadow-media: 0 30px 60px -34px rgb(6 26 44 / 0.45), 0 6px 16px -8px rgb(6 26 44 / 0.16);
 
     /* ---- Glass (owner-pinned material) ----
        Frosted translucent panels that blur a vivid backdrop, a thin light edge and layered soft shadows.
@@ -182,6 +199,7 @@
     --dur-4: 620ms;
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --stagger: 60ms; /* delay step between siblings in one entrance; keep cascades to 4-5 items */
 
     /* ---- Z scale ---- */
     --z-header: 40;

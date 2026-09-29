@@ -1,6 +1,6 @@
 ---
 import Base from '@/layouts/Base.astro';
-import ProductRow from '@/components/products/ProductRow.astro';
+import ProductCard from '@/components/products/ProductCard.astro';
 import CtaBand from '@/components/products/CtaBand.astro';
 import { categoryOrder, productsByCategory, type CategoryId } from '@/data/products';
 import { site } from '@/config/site';
@@ -19,7 +19,8 @@ const copy = {
       'AI projects and open tools built around Arabic language, local context and domain workflows, from education and agriculture to security and geospatial monitoring.',
     h1: 'Projects',
     lead: 'Sudaverse builds AI projects and open tools around Arabic language, local context and the workflows of specific domains.',
-    note: 'Every project page follows the same path: the problem, how the project tackles it, how it works, and how to get involved.',
+    count: (n: number, f: number) => `${n} projects in ${f} families.`,
+    jump: 'Project families',
     cats: {
       'ai-products': 'AI products for education and agriculture, built to work in Arabic.',
       'data-intelligence': 'Geospatial platforms for situational awareness and flood early warning.',
@@ -37,7 +38,9 @@ const copy = {
       'مشاريع ذكاء اصطناعي وأدوات مفتوحة مبنية حول اللغة العربية والسياق المحلي وسير العمل في المجالات المتخصصة، من التعليم والزراعة إلى الأمن والمراقبة الجغرافية.',
     h1: 'المشاريع',
     lead: 'تبني سودافيرس مشاريع ذكاء اصطناعي وأدوات مفتوحة حول اللغة العربية والسياق المحلي وسير العمل في مجالات متخصصة.',
-    note: 'تتبع كل صفحة مشروع المسار نفسه: المشكلة، وكيف يعالجها المشروع، وكيف يعمل، وكيف تشارك معنا.',
+    // Arabic counted nouns: 3 to 10 take the genitive plural, 11 and up the accusative singular.
+    count: (n: number, f: number) => `${n} ${n <= 10 ? 'مشاريع' : 'مشروعًا'} في ${f} ${f <= 10 ? 'مجالات' : 'مجالًا'}.`,
+    jump: 'مجالات المشاريع',
     cats: {
       'ai-products': 'منتجات ذكاء اصطناعي للتعليم والزراعة، مبنية لتعمل بالعربية.',
       'data-intelligence': 'منصات جغرافية مكانية للوعي بالموقف والإنذار المبكر من الفيضانات.',
@@ -54,6 +57,7 @@ const copy = {
 const groups = categoryOrder
   .map((id) => ({ id, items: productsByCategory(id) }))
   .filter((g) => g.items.length > 0);
+const total = groups.reduce((n, g) => n + g.items.length, 0);
 
 const abs = (path: string) => `${site.origin}${path}`;
 const jsonLd = [
@@ -74,14 +78,28 @@ const jsonLd = [
       <h1 id="products-h">{copy.h1}</h1>
       <div class="head__text">
         <p class="t-lead">{copy.lead}</p>
-        <p class="t-small t-muted">{copy.note}</p>
+        <p class="t-small t-muted">{copy.count(total, groups.length)}</p>
       </div>
     </div>
+    <nav class="container jump" aria-label={copy.jump}>
+      <ul role="list" class="jump__list">
+        {
+          groups.map((g) => (
+            <li>
+              <a class="jump__chip" href={`#cat-${g.id}`}>
+                {t(locale, `category.${g.id}` as const)}
+                <span class="jump__n" aria-hidden="true">{g.items.length}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
   </section>
 
   {
     groups.map((g, i) => (
-      <section class:list={['cat', { 'cat--alt': i % 2 === 1 }]} aria-labelledby={`cat-${g.id}`}>
+      <section class:list={['cat', { 'cat--alt': i % 2 === 0 }]} aria-labelledby={`cat-${g.id}`}>
         <div class="container cat__grid">
           <div class="cat__head" data-reveal>
             <h2 id={`cat-${g.id}`}>{t(locale, `category.${g.id}` as const)}</h2>
@@ -90,7 +108,7 @@ const jsonLd = [
           <ul role="list" class="cat__list" data-reveal>
             {g.items.map((p) => (
               <li>
-                <ProductRow product={p} locale={locale} />
+                <ProductCard product={p} locale={locale} />
               </li>
             ))}
           </ul>
@@ -129,8 +147,51 @@ const jsonLd = [
     }
   }
 
+  /* Family jump links: every family is one tap away, no filtering state to lose. */
+  .jump {
+    margin-block-start: var(--s-7);
+  }
+  .jump__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin: 0;
+    padding: 0;
+  }
+  .jump__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    min-block-size: 2.75rem;
+    padding-inline: var(--s-4) var(--s-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    font-size: var(--fs-200);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+  }
+  .jump__chip:hover {
+    background: var(--color-surface);
+    border-color: var(--nile-700);
+  }
+  .jump__n {
+    display: grid;
+    place-items: center;
+    min-inline-size: 1.5rem;
+    block-size: 1.5rem;
+    padding-inline: 0.35rem;
+    border-radius: var(--radius-pill);
+    background: var(--nile-100);
+    color: var(--nile-800);
+    font-size: var(--fs-100);
+    font-variant-numeric: tabular-nums;
+  }
+
   .cat {
     padding-block: var(--section-y-tight);
+    scroll-margin-block-start: var(--header-h);
   }
   .cat--alt {
     background: var(--color-bg-alt);
@@ -143,6 +204,8 @@ const jsonLd = [
   .cat__head {
     display: grid;
     gap: var(--s-3);
+    padding-block-start: var(--s-4);
+    border-block-start: 1px solid var(--color-border-strong);
   }
   .cat__head h2 {
     font-size: var(--fs-500);
@@ -154,23 +217,27 @@ const jsonLd = [
     max-inline-size: 34ch;
   }
   .cat__list {
+    display: grid;
+    gap: var(--s-5);
+    margin: 0;
     padding: 0;
-    border-block-start: 1px solid var(--color-border-strong);
   }
-  .cat__list > li {
-    border-block-end: 1px solid var(--color-border);
-  }
-  .cat__list > li:last-child {
-    border-block-end-color: var(--color-border-strong);
+  @media (min-width: 40rem) {
+    .cat__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   @media (min-width: 64rem) {
     .cat__grid {
-      grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+      grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
       column-gap: var(--s-8);
     }
     .cat__head {
       position: sticky;
       inset-block-start: calc(var(--header-h) + var(--s-6));
+    }
+    .cat__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 </style>

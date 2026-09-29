@@ -1,0 +1,176 @@
+---
+import Icon from '@/components/Icon.astro';
+import StageBadge from '@/components/StageBadge.astro';
+import ProductLogo from './ProductLogo.astro';
+import type { Product } from '@/data/products';
+import { localePath, t } from '@/i18n/utils';
+import { pick, type Locale } from '@/i18n/config';
+
+/**
+ * A product in a grid: logo frame, name and stage, one-line value, who it is built for. The name is the link and
+ * its hit area covers the card, so the whole card is one tab stop with one accessible name.
+ */
+interface Props {
+  product: Product;
+  locale: Locale;
+  /** Heading level of the product name, so the card fits the page outline. */
+  level?: 3 | 4;
+  /** Show the category above the tagline (used where cards from several families share a grid). */
+  showCategory?: boolean;
+  /** Hide the audience line (compact strips). */
+  compact?: boolean;
+}
+const { product, locale, level = 3, showCategory = false, compact = false } = Astro.props;
+const href = localePath(locale, `projects/${product.slug}`);
+const H = `h${level}` as 'h3' | 'h4';
+---
+
+<article class:list={['pcard', { 'pcard--compact': compact }]}>
+  <ProductLogo slug={product.slug} size={compact ? 'strip' : 'card'} />
+  <div class="pcard__body">
+    <div class="pcard__head">
+      <H class="pcard__name"><a class="pcard__link" href={href} translate="no">{product.name}</a></H>
+      <StageBadge stage={product.stage} locale={locale} />
+    </div>
+    {showCategory && <p class="pcard__cat">{t(locale, `category.${product.category}` as const)}</p>}
+    <p class="pcard__tag">{pick(product.tagline, locale)}</p>
+    {
+      !compact && product.audience && (
+        <p class="pcard__aud">
+          <span class="pcard__k">{t(locale, 'misc.audience')}</span> {pick(product.audience, locale)}
+        </p>
+      )
+    }
+    <span class="pcard__go" aria-hidden="true">
+      {t(locale, 'cta.exploreProject')}
+      <Icon name="arrow" size={16} directional />
+    </span>
+  </div>
+</article>
+
+<style>
+  .pcard {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: var(--s-4);
+    block-size: 100%;
+    padding: var(--s-3);
+    background: color-mix(in srgb, var(--white) 55%, transparent);
+    border: 1px solid var(--color-border);
+    border-radius: calc(var(--radius-card) + 4px);
+    transition:
+      translate var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out),
+      border-color var(--dur-2) var(--ease-out);
+  }
+  .pcard:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-card-hover);
+    translate: 0 -2px;
+  }
+  .pcard:active {
+    translate: 0 0;
+    box-shadow: none;
+  }
+  .pcard:has(.pcard__link:focus-visible) {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+  /* The plate sits inside the card, so it drops its own border (no box inside a box). */
+  .pcard :global(.plogo) {
+    border-color: transparent;
+  }
+  .pcard__link {
+    color: inherit;
+    text-decoration: none;
+  }
+  .pcard__link:focus-visible {
+    outline: none;
+  }
+  .pcard__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  .pcard__body {
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    align-content: start;
+    gap: var(--s-2);
+    padding: 0 var(--s-2) var(--s-2);
+    min-inline-size: 0;
+  }
+  .pcard__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
+  }
+  .pcard__name {
+    font-size: var(--fs-500);
+    line-height: var(--lh-heading);
+    font-weight: 660;
+  }
+  .pcard__cat {
+    font-size: var(--fs-100);
+    font-weight: 620;
+    letter-spacing: var(--tracking-meta);
+    color: var(--color-text-meta);
+  }
+  .pcard__tag {
+    font-weight: 560;
+    line-height: 1.45;
+  }
+  .pcard__aud {
+    font-size: var(--fs-200);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+  .pcard__k {
+    font-size: var(--fs-100);
+    font-weight: 650;
+    letter-spacing: var(--tracking-meta);
+    color: var(--color-text-meta);
+    margin-inline-end: 0.35rem;
+  }
+  .pcard__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-block-start: var(--s-2);
+    font-size: var(--fs-200);
+    font-weight: 620;
+    color: var(--color-link);
+  }
+  .pcard__go :global(svg) {
+    transition: translate var(--dur-2) var(--ease-out);
+  }
+  .pcard:hover .pcard__go :global(svg) {
+    translate: 3px 0;
+  }
+  :global([dir='rtl']) .pcard:hover .pcard__go :global(svg) {
+    translate: -3px 0;
+  }
+
+  .pcard--compact .pcard__name {
+    font-size: var(--fs-400);
+  }
+  .pcard--compact .pcard__tag {
+    font-size: var(--fs-200);
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pcard,
+    .pcard__go :global(svg) {
+      transition: none;
+    }
+    .pcard:hover,
+    .pcard:hover .pcard__go :global(svg) {
+      translate: none;
+    }
+  }
+</style>

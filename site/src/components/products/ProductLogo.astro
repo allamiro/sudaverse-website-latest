@@ -1,0 +1,87 @@
+---
+import { Image } from 'astro:assets';
+import TraceArt from '@/components/TraceArt.astro';
+import { productBySlug } from '@/data/products';
+import { artFor } from './art';
+
+/**
+ * The one way a product logo is shown. The owner's logos differ in aspect ratio (Sudata is twice as wide as
+ * it is tall, SudaNDR is nearly square), in weight and in how much text they carry, so a fixed width or height
+ * makes some look shouted and others lost. The frame gives every mark the same optical AREA instead:
+ * width = sqrt(area * frameRatio * logoRatio), clamped so nothing touches the edge. The image is never cropped
+ * (object-fit: contain) and never drawn wider than its own pixels allow.
+ *
+ * A product without a logo keeps its generative circuit art, so the grid never shows an empty plate.
+ */
+interface Props {
+  slug: string;
+  /** card: product cards and menus; hero: the product page; strip: small related-product plates. */
+  size?: 'card' | 'hero' | 'strip';
+  /** Load immediately (above the fold). */
+  eager?: boolean;
+  class?: string;
+}
+const { slug, size = 'card', eager = false, class: className } = Astro.props;
+const product = productBySlug(slug);
+const logo = product?.logo;
+const art = artFor(slug);
+
+// Frame ratio (width / height) and the share of the frame's area a logo may cover, per size.
+const frame = { card: { ratio: 3 / 2, area: 0.3 }, hero: { ratio: 4 / 3, area: 0.34 }, strip: { ratio: 2, area: 0.34 } }[size];
+let widthPct = 0;
+if (logo) {
+  const a = logo.width / logo.height;
+  // Logo box in units of the frame height: h = sqrt(area * R / a), w = a * h. Width as a share of frame width:
+  let w = Math.sqrt((frame.area * frame.ratio) / a) * a / frame.ratio;
+  const maxW = 0.78;
+  const maxH = 0.72;
+  w = Math.min(w, maxW, (maxH * a) / frame.ratio);
+  widthPct = Math.round(w * 1000) / 10;
+}
+// Rendered widths: a hero frame is up to ~30rem wide at 2x density; a card up to ~24rem.
+const renderW = logo ? Math.min(logo.width, size === 'hero' ? 900 : 640) : 0;
+---
+
+<div class:list={['plogo', `plogo--${size}`, { 'plogo--art': !logo, 'plogo--deep': !logo && art.plate === 'deep' }, className]} style={`--plogo-ratio:${frame.ratio}`}>
+  {
+    logo ? (
+      <Image
+        src={logo}
+        alt=""
+        width={renderW}
+        style={`inline-size:${widthPct}%;max-inline-size:${logo.width}px`}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+    ) : (
+      <TraceArt seed={art.seed} tone={art.tone} traces={art.traces} leaves={art.leaves} graticule={art.graticule} thread={product?.stage === 'live'} />
+    )
+  }
+</div>
+
+<style>
+  .plogo {
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    aspect-ratio: var(--plogo-ratio);
+    overflow: hidden;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .plogo img {
+    block-size: auto;
+    object-fit: contain;
+  }
+  .plogo--art {
+    background: var(--paper);
+  }
+  .plogo--deep {
+    background: var(--nile-950);
+    border-color: color-mix(in srgb, var(--nile-200) 24%, transparent);
+  }
+  .plogo--hero {
+    border-radius: var(--radius-3);
+  }
+</style>
