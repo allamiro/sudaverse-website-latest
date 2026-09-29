@@ -2,10 +2,10 @@
 import Base from '@/layouts/Base.astro';
 import ProductCard from '@/components/products/ProductCard.astro';
 import CtaBand from '@/components/products/CtaBand.astro';
-import { categoryOrder, productsByCategory, type CategoryId } from '@/data/products';
+import { categoryBlurb, categoryOrder, productsByCategory } from '@/data/products';
 import { site } from '@/config/site';
 import { localePath, localeStaticPaths, t } from '@/i18n/utils';
-import type { Locale } from '@/i18n/config';
+import { pick, type Locale } from '@/i18n/config';
 
 export function getStaticPaths() {
   return localeStaticPaths();
@@ -21,12 +21,6 @@ const copy = {
     lead: 'Sudaverse builds AI projects and open tools around Arabic language, local context and the workflows of specific domains.',
     count: (n: number, f: number) => `${n} projects in ${f} families.`,
     jump: 'Project families',
-    cats: {
-      'ai-products': 'AI products for education and agriculture, built to work in Arabic.',
-      'data-intelligence': 'Geospatial platforms for situational awareness and flood early warning.',
-      'secure-ai': 'Security systems that apply AI to defending networks.',
-      'language-research': 'Open tooling for Arabic language models and their training data.',
-    } as Record<CategoryId, string>,
     cta: {
       h2: 'Start with a briefing.',
       body: 'Ask about a project, an integration or a wider engagement. You will talk with our engineering team.',
@@ -41,12 +35,6 @@ const copy = {
     // Arabic counted nouns: 3 to 10 take the genitive plural, 11 and up the accusative singular.
     count: (n: number, f: number) => `${n} ${n <= 10 ? 'مشاريع' : 'مشروعًا'} في ${f} ${f <= 10 ? 'مجالات' : 'مجالًا'}.`,
     jump: 'مجالات المشاريع',
-    cats: {
-      'ai-products': 'منتجات ذكاء اصطناعي للتعليم والزراعة، مبنية لتعمل بالعربية.',
-      'data-intelligence': 'منصات جغرافية مكانية للوعي بالموقف والإنذار المبكر من الفيضانات.',
-      'secure-ai': 'أنظمة أمنية تطبّق الذكاء الاصطناعي على حماية الشبكات.',
-      'language-research': 'أدوات مفتوحة للنماذج اللغوية العربية وبيانات تدريبها.',
-    } as Record<CategoryId, string>,
     cta: {
       h2: 'ابدأ بجلسة تعريفية.',
       body: 'اسأل عن مشروع أو تكامل أو تعاون أوسع، وستتحدث مع فريقنا الهندسي.',
@@ -103,7 +91,7 @@ const jsonLd = [
         <div class="container cat__grid">
           <div class="cat__head" data-reveal>
             <h2 id={`cat-${g.id}`}>{t(locale, `category.${g.id}` as const)}</h2>
-            <p class="cat__desc">{copy.cats[g.id]}</p>
+            <p class="cat__desc">{pick(categoryBlurb[g.id], locale)}</p>
           </div>
           <ul role="list" class="cat__list" data-reveal>
             {g.items.map((p) => (

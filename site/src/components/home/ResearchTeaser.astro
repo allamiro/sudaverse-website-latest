@@ -1,0 +1,315 @@
+---
+import Icon from '@/components/Icon.astro';
+import { publications, openWork } from '@/data/research';
+import { productBySlug } from '@/data/products';
+import { artifactsFor } from '@/lib/artifacts';
+import { localePath, t } from '@/i18n/utils';
+import { pick, type Locale } from '@/i18n/config';
+
+/**
+ * "Research that becomes infrastructure": the published papers, the latest artifact and the open-source releases,
+ * each with its real metadata and the project it feeds. Every row comes from src/data/research.ts or the artifacts
+ * collection; nothing is shown that those do not hold (no citation counts, no stars).
+ */
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const L = (v: Parameters<typeof pick>[0]) => (pick(v as never, locale) as string | undefined) ?? '';
+
+const copy = {
+  en: {
+    h2: 'Research that becomes infrastructure',
+    lead: 'We choose research directions because our projects depend on the answers, and we publish what the work shows: papers, technical artifacts and open code.',
+    hub: 'Research overview',
+    kind: { paper: 'Paper', preprint: 'Preprint', report: 'Report', artifact: 'Artifact' },
+    feeds: 'Feeds',
+    code: 'Open source',
+    codeLead: 'Public repositories under github.com/sudaverse.',
+    license: (l: string) => `${l} license`,
+  },
+  ar: {
+    h2: 'بحث يتحول إلى بنية تحتية',
+    lead: 'نختار اتجاهاتنا البحثية لأن مشاريعنا تعتمد على إجاباتها، وننشر ما يكشفه العمل: أوراقًا بحثية ومقالات تقنية وشيفرة مفتوحة.',
+    hub: 'نظرة على الأبحاث',
+    kind: { paper: 'ورقة بحثية', preprint: 'مسودة بحثية', report: 'تقرير', artifact: 'مقالة تقنية' },
+    feeds: 'يغذّي',
+    code: 'مفتوح المصدر',
+    codeLead: 'مستودعات عامة على github.com/sudaverse.',
+    license: (l: string) => `رخصة ${l}`,
+  },
+}[locale];
+
+const fmtDate = (d: Date) => new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' }).format(d);
+const latest = (await artifactsFor(locale))[0];
+const projectLink = (slug: string) => {
+  const p = productBySlug(slug);
+  return p ? { name: p.name, href: localePath(locale, `projects/${p.slug}`) } : null;
+};
+
+type Row = { kind: string; title: string; titleLang?: string; meta: string; summary: string; href: string; projects: { name: string; href: string }[] };
+const rows: Row[] = [
+  ...publications.map((p) => ({
+    kind: copy.kind[p.kind],
+    title: p.title,
+    titleLang: 'en',
+    meta: `${p.venue} · ${p.year}`,
+    summary: L(p.summary),
+    href: `${localePath(locale, 'research/papers')}#${p.id}`,
+    projects: (p.projects ?? []).map(projectLink).filter(Boolean) as Row['projects'],
+  })),
+  ...(latest
+    ? [
+        {
+          kind: copy.kind.artifact,
+          title: latest.entry.data.title,
+          titleLang: latest.entry.data.lang,
+          meta: fmtDate(latest.entry.data.date),
+          summary: latest.entry.data.summary,
+          href: localePath(locale, `research/artifacts/${latest.entry.data.permalink}`),
+          projects: latest.entry.data.projects.map(projectLink).filter(Boolean) as Row['projects'],
+        },
+      ]
+    : []),
+];
+---
+
+<section class="section section--alt rt" aria-labelledby="rt-h">
+  <div class="container rt__grid">
+    <div class="rt__head" data-reveal>
+      <h2 id="rt-h">{copy.h2}</h2>
+      <p class="t-muted">{copy.lead}</p>
+      <a class="textlink" href={localePath(locale, 'research')}>
+        {copy.hub}
+        <Icon name="arrow" size={18} directional />
+      </a>
+    </div>
+
+    <div class="rt__body">
+      <ul role="list" class="rt__list" data-reveal>
+        {
+          rows.map((r) => (
+            <li class="rt__row">
+              <p class="rt__meta">
+                <span class="rt__kind">{r.kind}</span>
+                <span>{r.meta}</span>
+              </p>
+              <h3 class="rt__title">
+                <a href={r.href} lang={r.titleLang !== locale ? r.titleLang : undefined} dir={r.titleLang !== locale ? 'auto' : undefined}>
+                  {r.title}
+                </a>
+              </h3>
+              <p class="rt__sum" lang={r.titleLang !== locale && r.kind === copy.kind.artifact ? r.titleLang : undefined}>
+                {r.summary}
+              </p>
+              {r.projects.length > 0 && (
+                <p class="rt__feeds">
+                  <span class="rt__k">{copy.feeds}</span>
+                  {r.projects.map((p) => (
+                    <a class="rt__chip" href={p.href} translate="no">
+                      {p.name}
+                    </a>
+                  ))}
+                </p>
+              )}
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="rt__code" data-reveal>
+        <div class="rt__codehead">
+          <h3 class="rt__codeh">{copy.code}</h3>
+          <p class="t-small t-muted" set:html={copy.codeLead.replace('github.com/sudaverse', '<span dir="ltr" translate="no">github.com/sudaverse</span>')} />
+        </div>
+        <ul role="list" class="rt__repos">
+          {
+            openWork.map((w) => (
+              <li>
+                <a class="rt__repo" href={w.href} target="_blank" rel="noopener noreferrer">
+                  <Icon name="github" size={18} />
+                  <span class="rt__rname" translate="no">
+                    {w.name}
+                  </span>
+                  <span class="rt__rmeta">{[L(w.kind), w.license ? copy.license(w.license) : ''].filter(Boolean).join(' · ')}</span>
+                  <Icon name="external" size={14} class="rt__ext" />
+                  <span class="sr-only"> ({t(locale, 'a11y.external')})</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .rt__grid {
+    display: grid;
+    gap: var(--s-7);
+  }
+  .rt__head {
+    display: grid;
+    gap: var(--s-4);
+    align-content: start;
+    justify-items: start;
+  }
+  .rt__head h2 {
+    max-inline-size: 14ch;
+  }
+  .rt__body {
+    display: grid;
+    gap: var(--s-7);
+    min-inline-size: 0;
+  }
+  .rt__list {
+    margin: 0;
+    padding: 0;
+    border-block-start: 1px solid var(--color-border-strong);
+  }
+  .rt__row {
+    display: grid;
+    gap: var(--s-2);
+    padding-block: var(--s-5);
+    border-block-end: 1px solid var(--color-border);
+  }
+  .rt__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2) var(--s-3);
+    font-size: var(--fs-100);
+    color: var(--color-text-meta);
+    font-variant-numeric: tabular-nums;
+  }
+  .rt__kind {
+    padding: 0.1rem 0.55rem;
+    border-radius: var(--radius-pill);
+    background: var(--nile-100);
+    color: var(--nile-800);
+    font-weight: 650;
+  }
+  .rt__title {
+    font-size: var(--fs-400);
+    line-height: 1.35;
+    max-inline-size: 48ch;
+  }
+  .rt__title a {
+    color: var(--color-text);
+    text-decoration-color: var(--color-border-strong);
+  }
+  .rt__title a:hover {
+    color: var(--color-link-hover);
+    text-decoration-color: currentColor;
+  }
+  .rt__sum {
+    color: var(--color-text-muted);
+    font-size: var(--fs-200);
+  }
+  .rt__feeds {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-2);
+    margin-block-start: var(--s-1);
+  }
+  .rt__k {
+    font-size: var(--fs-100);
+    font-weight: 650;
+    letter-spacing: var(--tracking-meta);
+    color: var(--color-text-meta);
+  }
+  .rt__chip {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2rem;
+    padding-inline: 0.7rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-100);
+    font-weight: 620;
+    color: var(--color-text);
+    text-decoration: none;
+    /* The chip is small, so the hit area grows invisibly to 44px. */
+    position: relative;
+  }
+  .rt__chip::after {
+    content: '';
+    position: absolute;
+    inset: -0.375rem -0.125rem;
+  }
+  .rt__chip:hover {
+    border-color: var(--nile-700);
+    background: var(--color-surface);
+  }
+
+  .rt__code {
+    display: grid;
+    gap: var(--s-4);
+  }
+  .rt__codeh {
+    font-size: var(--fs-300);
+    font-weight: 650;
+  }
+  .rt__codehead {
+    display: grid;
+    gap: var(--s-1);
+  }
+  .rt__repos {
+    display: grid;
+    gap: var(--s-3);
+    margin: 0;
+    padding: 0;
+  }
+  .rt__repo {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'icon name ext' 'icon meta ext';
+    align-items: center;
+    column-gap: var(--s-3);
+    block-size: 100%;
+    padding: var(--s-3) var(--s-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    color: var(--color-text);
+    text-decoration: none;
+    transition: border-color var(--dur-1) var(--ease-out);
+  }
+  .rt__repo:hover {
+    border-color: var(--nile-700);
+  }
+  .rt__repo > :global(svg:first-child) {
+    grid-area: icon;
+  }
+  .rt__rname {
+    grid-area: name;
+    font-weight: 620;
+    font-size: var(--fs-200);
+  }
+  .rt__rmeta {
+    grid-area: meta;
+    font-size: var(--fs-100);
+    color: var(--color-text-meta);
+  }
+  .rt__repo :global(.rt__ext) {
+    grid-area: ext;
+    color: var(--color-text-meta);
+  }
+  @media (min-width: 48rem) {
+    .rt__repos {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 64rem) {
+    .rt__grid {
+      grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+      column-gap: var(--s-8);
+    }
+    .rt__head {
+      position: sticky;
+      inset-block-start: calc(var(--header-h) + var(--s-6));
+    }
+  }
+</style>

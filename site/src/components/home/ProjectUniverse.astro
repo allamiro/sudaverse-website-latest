@@ -1,0 +1,551 @@
+---
+import Icon from '@/components/Icon.astro';
+import ProductCard from '@/components/products/ProductCard.astro';
+import { categoryBlurb, categoryOrder, productsByCategory, products, type CategoryId } from '@/data/products';
+import { localePath, t } from '@/i18n/utils';
+import { pick, type Locale } from '@/i18n/config';
+
+/**
+ * "The verse": the home page's map of the projects as a night sky. Each family is a constellation, each project a
+ * star with its name beside it; picking a star brings that project up in the panel beside the sky. The sky is a
+ * still map (no drifting or twinkling): stars light up and the constellation lines draw once, when the section
+ * first scrolls into view, and nothing moves under prefers-reduced-motion.
+ *
+ * Progressive enhancement: the server renders every family as a heading and a list of cards. The script swaps that
+ * for the sky and the panel, so without JavaScript nothing is lost. Stars are real buttons (aria-pressed), the panel
+ * is labelled by the selected star, and arrow keys walk the sky in reading order.
+ *
+ * Positions are a map, not a reading order, so they use physical x/y and are the same in both languages.
+ */
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+
+// Star positions in two layouts: a wide sky (1000 x 560) and a tall one for phones (400 x 600).
+type Pt = [number, number];
+const place: Record<string, { wide: Pt; tall: Pt }> = {
+  sudatutor: { wide: [120, 150], tall: [80, 70] },
+  terab: { wide: [300, 92], tall: [250, 48] },
+  sudandr: { wide: [520, 205], tall: [320, 190] },
+  'sudan-monitor': { wide: [150, 420], tall: [70, 285] },
+  sudaflood: { wide: [330, 470], tall: [190, 345] },
+  sudata: { wide: [395, 320], tall: [250, 255] },
+  urri: { wide: [735, 110], tall: [80, 470] },
+  sudanizer: { wide: [880, 250], tall: [215, 545] },
+  llmcorpuskit: { wide: [720, 395], tall: [335, 440] },
+};
+// Where each constellation's name sits.
+const famLabel: Record<CategoryId, { wide: Pt; tall: Pt }> = {
+  'ai-products': { wide: [95, 58], tall: [20, 14] },
+  'data-intelligence': { wide: [95, 530], tall: [20, 215] },
+  'secure-ai': { wide: [470, 275], tall: [150, 150] },
+  'language-research': { wide: [690, 40], tall: [20, 405] },
+};
+const hue: Record<CategoryId, string> = {
+  'ai-products': 'var(--brand-blue)',
+  'data-intelligence': 'var(--brand-green)',
+  'secure-ai': 'var(--copper-300)',
+  'language-research': 'var(--viz-gold)',
+};
+const W = { wide: [1000, 560], tall: [400, 600] } as const;
+
+const groups = categoryOrder.map((id) => ({ id, items: productsByCategory(id) })).filter((g) => g.items.length > 0);
+const total = groups.reduce((n, g) => n + g.items.length, 0);
+// Reading order for arrow keys: family by family, as in the Projects index.
+const ordered = groups.flatMap((g) => g.items);
+const known = ordered.filter((p) => place[p.slug]);
+const fallbackOnly = products.length !== known.length; // a new project without a position keeps the list view
+
+// Constellation lines: consecutive stars of a family, in the order above.
+const lines = (layout: 'wide' | 'tall') =>
+  groups.flatMap((g) =>
+    g.items
+      .filter((p) => place[p.slug])
+      .slice(1)
+      .map((p, i) => {
+        const a = place[g.items[i].slug][layout];
+        const b = place[p.slug][layout];
+        return { a, b, hue: hue[g.id], len: Math.hypot(b[0] - a[0], b[1] - a[1]) };
+      }),
+  );
+
+// Background stars: deterministic, so the sky is the same on every build and in both languages.
+function rng(s: number) {
+  let a = s >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const dust = (layout: 'wide' | 'tall', n: number) => {
+  const r = rng(layout === 'wide' ? 91 : 17);
+  const [w, h] = W[layout];
+  return Array.from({ length: n }, () => ({ x: r() * w, y: r() * h, r: 0.5 + r() * 1.1, o: 0.2 + r() * 0.5 }));
+};
+
+const copy = {
+  en: {
+    h2: 'What we build',
+    lead: (n: number, f: number) =>
+      `${n} projects in ${f} families, from classrooms and farms to network security and Sudanese language models. Pick a star to see one up close.`,
+    all: 'All projects',
+    sky: 'Map of Sudaverse projects',
+    panel: 'Selected project',
+  },
+  ar: {
+    h2: 'ما نبنيه',
+    lead: (n: number, f: number) =>
+      `${n} ${n <= 10 ? 'مشاريع' : 'مشروعًا'} في ${f} ${f <= 10 ? 'مجالات' : 'مجالًا'}، من الفصول الدراسية والمزارع إلى حماية الشبكات والنماذج اللغوية السودانية. اختر نجمة لترى مشروعها عن قرب.`,
+    all: 'كل المشاريع',
+    sky: 'خريطة مشاريع سودافيرس',
+    panel: 'المشروع المختار',
+  },
+}[locale];
+const pct = (v: number, of: number) => `${Math.round((v / of) * 10000) / 100}%`;
+---
+
+<section class="section section--deep on-deep verse" id="projects" aria-labelledby="verse-h">
+  <div class="container">
+    <div class="verse__head" data-reveal>
+      <h2 id="verse-h">{copy.h2}</h2>
+      <p class="t-lead verse__lead">{copy.lead(total, groups.length)}</p>
+      <a class="textlink verse__all" href={localePath(locale, 'projects')}>
+        {copy.all}
+        <Icon name="arrow" size={18} directional />
+      </a>
+    </div>
+
+    <div class="verse__body" data-verse={fallbackOnly ? undefined : ''}>
+      <!-- The sky: revealed by the script. -->
+      <div class="verse__stage" hidden>
+        <div class="sky" role="group" aria-label={copy.sky}>
+          {
+            (['wide', 'tall'] as const).map((layout) => (
+              <svg class={`sky__svg sky__svg--${layout}`} viewBox={`0 0 ${W[layout][0]} ${W[layout][1]}`} aria-hidden="true" focusable="false">
+                <g class="sky__dust">
+                  {dust(layout, layout === 'wide' ? 140 : 90).map((s) => (
+                    <circle cx={s.x.toFixed(1)} cy={s.y.toFixed(1)} r={s.r.toFixed(2)} opacity={s.o.toFixed(2)} />
+                  ))}
+                </g>
+                <g class="sky__lines">
+                  {lines(layout).map((l) => (
+                    <line x1={l.a[0]} y1={l.a[1]} x2={l.b[0]} y2={l.b[1]} style={`--len:${Math.ceil(l.len)};stroke:${l.hue}`} />
+                  ))}
+                </g>
+              </svg>
+            ))
+          }
+
+          {
+            groups.map((g) => (
+              <p
+                class="sky__fam"
+                style={`--wx:${pct(famLabel[g.id].wide[0], W.wide[0])};--wy:${pct(famLabel[g.id].wide[1], W.wide[1])};--tx:${pct(famLabel[g.id].tall[0], W.tall[0])};--ty:${pct(famLabel[g.id].tall[1], W.tall[1])};--hue:${hue[g.id]}`}
+              >
+                {t(locale, `category.${g.id}` as const)}
+              </p>
+            ))
+          }
+
+          <ul role="list" class="sky__stars">
+            {
+              known.map((p, i) => (
+                <li
+                  class="star"
+                  style={`--wx:${pct(place[p.slug].wide[0], W.wide[0])};--wy:${pct(place[p.slug].wide[1], W.wide[1])};--tx:${pct(place[p.slug].tall[0], W.tall[0])};--ty:${pct(place[p.slug].tall[1], W.tall[1])};--hue:${hue[p.category]};--i:${i}`}
+                >
+                  <button
+                    type="button"
+                    class="star__btn"
+                    id={`star-${p.slug}`}
+                    aria-controls={`verse-p-${p.slug}`}
+                    aria-pressed={i === 0 ? 'true' : 'false'}
+                    data-star={p.slug}
+                  >
+                    <span class="star__dot" aria-hidden="true" />
+                    <span class="star__name" translate="no">
+                      {p.name}
+                    </span>
+                  </button>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <div class="verse__panel" aria-label={copy.panel} role="region">
+          {
+            known.map((p, i) => (
+              <div class="verse__card" id={`verse-p-${p.slug}`} hidden={i !== 0} data-card={p.slug}>
+                <ProductCard product={p} locale={locale} level={3} showCategory />
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      <!-- Without the script: every family with its cards. -->
+      <div class="verse__list" data-list>
+        {
+          groups.map((g) => (
+            <div class="fam">
+              <div class="fam__head">
+                <h3 class="fam__h">
+                  <span class="fam__dot" style={`--hue:${hue[g.id]}`} aria-hidden="true" />
+                  {t(locale, `category.${g.id}` as const)}
+                </h3>
+                <p class="fam__d">{pick(categoryBlurb[g.id], locale)}</p>
+              </div>
+              <ul role="list" class="fam__cards">
+                {g.items.map((p) => (
+                  <li>
+                    <ProductCard product={p} locale={locale} level={4} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-verse]')) {
+    const stage = root.querySelector<HTMLElement>('.verse__stage');
+    const list = root.querySelector<HTMLElement>('[data-list]');
+    const stars = [...root.querySelectorAll<HTMLButtonElement>('[data-star]')];
+    const cards = [...root.querySelectorAll<HTMLElement>('[data-card]')];
+    if (!stage || !list || !stars.length) continue;
+
+    stage.hidden = false;
+    list.hidden = true;
+
+    const select = (slug: string) => {
+      for (const s of stars) s.setAttribute('aria-pressed', String(s.dataset.star === slug));
+      for (const c of cards) c.hidden = c.dataset.card !== slug;
+    };
+    stars.forEach((star, i) => {
+      star.addEventListener('click', () => select(star.dataset.star!));
+      // Arrow keys walk the sky family by family; Home and End jump to the ends.
+      star.addEventListener('keydown', (e) => {
+        const n = stars.length;
+        const to =
+          e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % n
+          : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + n) % n
+          : e.key === 'Home' ? 0
+          : e.key === 'End' ? n - 1
+          : -1;
+        if (to < 0) return;
+        e.preventDefault();
+        stars[to].focus();
+        select(stars[to].dataset.star!);
+      });
+    });
+
+    // Light the sky once, the first time it is mostly in view.
+    const sky = stage.querySelector<HTMLElement>('.sky');
+    if (sky && 'IntersectionObserver' in window) {
+      root.classList.add('will-light');
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            root.classList.add('is-lit');
+            io.disconnect();
+          }
+        },
+        { threshold: 0.35 },
+      );
+      io.observe(sky);
+    }
+  }
+</script>
+
+<style>
+  .verse {
+    background: var(--nile-950);
+    overflow: clip;
+  }
+  .verse__head {
+    display: grid;
+    gap: var(--s-4);
+    justify-items: start;
+    margin-block-end: var(--s-7);
+  }
+  .verse__head h2 {
+    max-inline-size: 20ch;
+  }
+  .verse__lead {
+    color: var(--color-text-on-deep-muted);
+    max-inline-size: 56ch;
+  }
+  .verse .verse__all {
+    color: var(--nile-200);
+  }
+
+  /* ---- Sky and panel ---- */
+  .verse__stage {
+    display: grid;
+    gap: var(--s-6);
+    align-items: center;
+  }
+  .verse__stage[hidden],
+  .verse__list[hidden],
+  .verse__card[hidden] {
+    display: none;
+  }
+  @media (min-width: 64rem) {
+    .verse__stage {
+      grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+      gap: var(--s-7);
+    }
+  }
+
+  .sky {
+    position: relative;
+    aspect-ratio: 400 / 600;
+    border: 1px solid color-mix(in srgb, var(--nile-200) 16%, transparent);
+    border-radius: var(--radius-3);
+    background:
+      radial-gradient(70% 55% at 50% 45%, color-mix(in srgb, var(--nile-800) 55%, transparent), transparent 75%),
+      var(--nile-950);
+    /* Stars are placed as a map: physical x/y, identical in both languages. */
+    direction: ltr;
+  }
+  .sky__svg {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    max-inline-size: none;
+  }
+  .sky__svg--wide {
+    display: none;
+  }
+  .sky__dust circle {
+    fill: var(--nile-100);
+  }
+  .sky__lines line {
+    stroke-width: 1.25;
+    stroke-opacity: 0.55;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+  @media (min-width: 48rem) {
+    .sky {
+      aspect-ratio: 1000 / 560;
+    }
+    .sky__svg--wide {
+      display: block;
+    }
+    .sky__svg--tall {
+      display: none;
+    }
+  }
+
+  .sky__fam,
+  .star {
+    position: absolute;
+    left: var(--tx);
+    top: var(--ty);
+  }
+  @media (min-width: 48rem) {
+    .sky__fam,
+    .star {
+      left: var(--wx);
+      top: var(--wy);
+    }
+  }
+  .sky__fam {
+    margin: 0;
+    max-inline-size: 16ch;
+    font-size: var(--fs-100);
+    font-weight: 650;
+    line-height: 1.3;
+    letter-spacing: var(--tracking-meta);
+    color: color-mix(in srgb, var(--hue) 70%, var(--white));
+    white-space: nowrap;
+  }
+  [dir='rtl'] .sky__fam {
+    direction: rtl;
+  }
+  .sky__stars {
+    margin: 0;
+    padding: 0;
+  }
+  .star {
+    translate: -50% -50%;
+  }
+  /* The button is the star plus its name below it: a 44px-tall target that never hides the label. */
+  .star__btn {
+    display: grid;
+    justify-items: center;
+    gap: 0.4rem;
+    min-inline-size: 2.75rem;
+    min-block-size: 2.75rem;
+    padding: 0.35rem 0.4rem;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-2);
+    color: var(--paper);
+    /* Centre the dot on the star's point: the name hangs below. */
+    translate: 0 calc(50% - 0.75rem);
+  }
+  .star__dot {
+    position: relative;
+    display: block;
+    inline-size: 0.8rem;
+    block-size: 0.8rem;
+    border-radius: 50%;
+    background: var(--hue);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hue) 22%, transparent);
+    transition:
+      scale var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out);
+  }
+  .star__name {
+    font-size: var(--fs-200);
+    font-weight: 620;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .star__btn:hover .star__dot {
+    scale: 1.25;
+  }
+  .star__btn[aria-pressed='true'] .star__dot {
+    scale: 1.35;
+    box-shadow:
+      0 0 0 3px var(--nile-950),
+      0 0 0 5px var(--hue);
+  }
+  .star__btn[aria-pressed='true'] .star__name {
+    color: var(--white);
+    text-decoration: underline;
+    text-decoration-color: var(--hue);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.3em;
+  }
+  .star__btn:focus-visible {
+    outline: 2px solid var(--color-focus-on-deep);
+    outline-offset: 2px;
+  }
+
+  .verse__panel {
+    min-inline-size: 0;
+  }
+  /* Cards sit on paper inside the deep band, so they take back the ink colours the band overrides. */
+  .verse :global(.pcard),
+  .verse :global(.pcard :is(h3, h4)) {
+    color: var(--color-text);
+  }
+  .verse__card :global(.pcard) {
+    background: var(--paper);
+    border-color: transparent;
+  }
+  .verse__card :global(.pcard:hover) {
+    box-shadow: none;
+    translate: none;
+  }
+
+  /* ---- The one authored moment: the sky lights up once. ---- */
+  @media (prefers-reduced-motion: no-preference) {
+    .will-light .sky__dust,
+    .will-light .star,
+    .will-light .sky__fam {
+      opacity: 0;
+    }
+    .will-light .sky__lines line {
+      stroke-dasharray: var(--len) var(--len);
+      stroke-dashoffset: var(--len);
+    }
+    .is-lit .sky__dust {
+      opacity: 1;
+      transition: opacity var(--dur-4) var(--ease-out);
+    }
+    .is-lit .star {
+      animation: star-in var(--dur-3) var(--ease-out) both;
+      animation-delay: calc(120ms + var(--i) * 45ms);
+    }
+    .is-lit .sky__fam {
+      opacity: 1;
+      transition: opacity var(--dur-4) var(--ease-out) 420ms;
+    }
+    .is-lit .sky__lines line {
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 700ms var(--ease-in-out) 480ms;
+    }
+    .verse__card:not([hidden]) {
+      animation: card-in var(--dur-3) var(--ease-out);
+    }
+  }
+  @keyframes star-in {
+    from {
+      opacity: 0;
+      scale: 0.4;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      translate: 0 0.5rem;
+    }
+  }
+
+  /* ---- The list (no script) ---- */
+  .verse__list {
+    display: grid;
+    gap: var(--s-8);
+  }
+  .fam {
+    display: grid;
+    gap: var(--s-5);
+  }
+  .fam__head {
+    display: grid;
+    gap: var(--s-2);
+    padding-block-start: var(--s-4);
+    border-block-start: 1px solid color-mix(in srgb, var(--nile-200) 30%, transparent);
+  }
+  .fam__h {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    font-size: var(--fs-500);
+  }
+  .fam__dot {
+    inline-size: 0.7rem;
+    block-size: 0.7rem;
+    border-radius: 50%;
+    background: var(--hue);
+  }
+  .fam__d {
+    color: var(--color-text-on-deep-muted);
+  }
+  .fam__cards {
+    display: grid;
+    gap: var(--s-5);
+    margin: 0;
+    padding: 0;
+  }
+  .fam__cards :global(.pcard) {
+    background: var(--paper);
+  }
+  @media (min-width: 40rem) {
+    .fam__cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 64rem) {
+    .fam__cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

@@ -30,6 +30,26 @@ export type CategoryId = 'ai-products' | 'data-intelligence' | 'secure-ai' | 'la
 
 export const categoryOrder: CategoryId[] = ['ai-products', 'data-intelligence', 'secure-ai', 'language-research'];
 
+/** One line per project family, shown on the Projects index and the home page. */
+export const categoryBlurb: Record<CategoryId, Localized> = {
+  'ai-products': {
+    en: 'AI products for education and agriculture, built to work in Arabic.',
+    ar: 'منتجات ذكاء اصطناعي للتعليم والزراعة، مبنية لتعمل بالعربية.',
+  },
+  'data-intelligence': {
+    en: 'Geospatial platforms for situational awareness and flood early warning.',
+    ar: 'منصات جغرافية مكانية للوعي بالموقف والإنذار المبكر من الفيضانات.',
+  },
+  'secure-ai': {
+    en: 'Security systems that apply AI to defending networks.',
+    ar: 'أنظمة أمنية تطبّق الذكاء الاصطناعي على حماية الشبكات.',
+  },
+  'language-research': {
+    en: 'Open tooling for Arabic language models and their training data.',
+    ar: 'أدوات مفتوحة للنماذج اللغوية العربية وبيانات تدريبها.',
+  },
+};
+
 export interface Product {
   slug: string;
   /** Latin brand name. Rendered inside a bidi-isolated span in Arabic pages. */

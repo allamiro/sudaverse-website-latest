@@ -4,6 +4,8 @@ import Button from '@/components/Button.astro';
 import Icon from '@/components/Icon.astro';
 import HeroStage from '@/components/hero/HeroStage.astro';
 import TraceArt from '@/components/TraceArt.astro';
+import ProjectUniverse from '@/components/home/ProjectUniverse.astro';
+import ResearchTeaser from '@/components/home/ResearchTeaser.astro';
 import { offerings } from '@/data/services';
 import { team } from '@/data/team';
 import { localePath, localeStaticPaths, t } from '@/i18n/utils';
@@ -16,8 +18,10 @@ const locale = Astro.params.lang as Locale;
 const L = (v: Parameters<typeof pick>[0]) => (pick(v as never, locale) as string | undefined) ?? '';
 
 /*
- * The home page is the corporate front door (owner direction, 2026-09-26): services, sectors, values and
- * how we work. Products and projects live under Projects in the header, not here.
+ * The home page is the corporate front door (owner direction, 2026-09-26): services lead, then sectors, values and
+ * how we work. The 2026-09 design pass adds two proof sections after services: the projects, one family at a time
+ * (ProjectUniverse, a night-sky map), and the published research (ResearchTeaser). Remove those two lines below to go back to the
+ * services-only home page.
  */
 const copy = {
   en: {
@@ -29,6 +33,7 @@ const copy = {
       lead: 'Sudaverse helps institutions and companies adopt AI, protect their systems and build reliable digital infrastructure, across healthcare, agriculture, education, geospatial intelligence and more.',
       services: 'Explore our services',
       about: 'About Sudaverse',
+      projects: 'See what we build',
     },
     services: {
       h2: 'What we do',
@@ -92,6 +97,7 @@ const copy = {
       lead: 'تساعد سودافيرس المؤسسات والشركات على تبنّي الذكاء الاصطناعي وحماية أنظمتها وبناء بنية رقمية موثوقة، في الرعاية الصحية والزراعة والتعليم والمعلومات الجغرافية وغيرها.',
       services: 'استكشف خدماتنا',
       about: 'عن سودافيرس',
+      projects: 'اطّلع على ما نبنيه',
     },
     services: {
       h2: 'ما نقدّمه',
@@ -165,8 +171,8 @@ const servicesHref = `${contactHref}?topic=services`;
           <Button href="#services" variant="primary" arrow>{copy.hero.services}</Button>
           <Button href={contactHref} variant="secondary">{t(locale, 'cta.talkToSudaverse')}</Button>
         </div>
-        <a class="textlink" href={aboutHref}>
-          {copy.hero.about}
+        <a class="textlink" href="#projects">
+          {copy.hero.projects}
           <Icon name="arrow" size={18} directional />
         </a>
       </div>
@@ -205,7 +211,10 @@ const servicesHref = `${contactHref}?topic=services`;
     </div>
   </section>
 
-  <!-- 3. Sectors -->
+  <!-- 3. Projects: the verse, one star per project -->
+  <ProjectUniverse locale={locale} />
+
+  <!-- 4. Sectors -->
   <section class="section sectors" id="sectors" aria-labelledby="sectors-h">
     <div class="container">
       <div class="head" data-reveal>
@@ -225,7 +234,10 @@ const servicesHref = `${contactHref}?topic=services`;
     </div>
   </section>
 
-  <!-- 4. Values -->
+  <!-- 5. Research -->
+  <ResearchTeaser locale={locale} />
+
+  <!-- 6. Values -->
   <section class="section section--deep on-deep values" aria-labelledby="values-h">
     <div class="container">
       <div class="head" data-reveal>
@@ -245,7 +257,7 @@ const servicesHref = `${contactHref}?topic=services`;
     </div>
   </section>
 
-  <!-- 5. How we work -->
+  <!-- 7. How we work -->
   <section class="section approach" aria-labelledby="approach-h">
     <div class="container">
       <div class="head" data-reveal>
@@ -266,7 +278,7 @@ const servicesHref = `${contactHref}?topic=services`;
     </div>
   </section>
 
-  <!-- 6. Company statement and what sets the work apart -->
+  <!-- 8. Company statement and what sets the work apart -->
   <section class="about" aria-label={copy.about.label}>
     <div class="container about__grid">
       <div class="about__main">
@@ -286,7 +298,7 @@ const servicesHref = `${contactHref}?topic=services`;
     </div>
   </section>
 
-  <!-- 7. Final call to action -->
+  <!-- 9. Final call to action -->
   <section class="section section--deep on-deep cta" aria-labelledby="cta-h">
     <div class="cta__art" aria-hidden="true"><TraceArt seed={5} tone="deep" traces={7} leaves={8} /></div>
     <div class="container cta__inner">
